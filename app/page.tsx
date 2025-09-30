@@ -39,7 +39,6 @@ export default function BrokerGeniePage() {
       "risk-profile",
       "carrier-fit",
       "package-builder",
-      "quote-options",
       "coverage-comparison",
       "proposal-builder",
       "activity",
@@ -58,7 +57,6 @@ export default function BrokerGeniePage() {
       "risk-profile",
       "carrier-fit",
       "package-builder",
-      "quote-options",
       "coverage-comparison",
       "proposal-builder",
       "activity",
@@ -81,8 +79,7 @@ export default function BrokerGeniePage() {
       "extract-ai": "Extract with AI",
       "risk-profile": "Risk Profile",
       "carrier-fit": "Carrier Fit & Compliance",
-      "package-builder": "Package Builder",
-      "quote-options": "Quote Options & Pricing",
+      "package-builder": "Package Builder & Pricing",
       "coverage-comparison": "Coverage Comparison",
       "proposal-builder": "Proposal Builder",
       activity: "Activity",
@@ -98,7 +95,6 @@ export default function BrokerGeniePage() {
       "risk-profile",
       "carrier-fit",
       "package-builder",
-      "quote-options",
       "coverage-comparison",
       "proposal-builder",
       "activity",
@@ -114,7 +110,6 @@ export default function BrokerGeniePage() {
       "risk-profile",
       "carrier-fit",
       "package-builder",
-      "quote-options",
       "coverage-comparison",
       "proposal-builder",
       "activity",
@@ -168,7 +163,6 @@ export default function BrokerGeniePage() {
               {currentStep === "risk-profile" && <RiskProfileDashboard onNext={handleNextStep} />}
               {currentStep === "carrier-fit" && <CarrierFitCompliance onNext={handleNextStep} />}
               {currentStep === "package-builder" && <PackageBuilder onNext={handleNextStep} />}
-              {currentStep === "quote-options" && <QuoteOptionsPricing onNext={handleNextStep} />}
               {currentStep === "coverage-comparison" && (
                 <CoverageComparison onNext={handleNextStep} onBack={handlePreviousStep} />
               )}
@@ -181,7 +175,6 @@ export default function BrokerGeniePage() {
                 "risk-profile",
                 "carrier-fit",
                 "package-builder",
-                "quote-options",
                 "coverage-comparison",
                 "proposal-builder",
                 "activity",
