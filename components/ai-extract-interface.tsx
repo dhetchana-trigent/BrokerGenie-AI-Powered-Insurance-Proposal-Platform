@@ -9,13 +9,13 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle, AlertCircle, Edit3, Check, X } from "lucide-react"
+import { CheckCircle, Edit3, Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useExtraction } from "@/lib/extraction-context"
 
 interface ExtractedEntity {
   field: string
   value: string
-  confidence: number
   source: string
   category: string
   editable: boolean
@@ -44,7 +44,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Legal Name",
     value: "Acme Manufacturing Inc.",
-    confidence: 95,
     source: "ACORD_125.pdf, Page 1",
     category: "client",
     editable: true,
@@ -52,7 +51,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "FEIN",
     value: "12-3456789",
-    confidence: 98,
     source: "ACORD_125.pdf, Page 1",
     category: "client",
     editable: true,
@@ -60,7 +58,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "NAICS Code",
     value: "332710 - Machine Shops",
-    confidence: 92,
     source: "ACORD_125.pdf, Page 1",
     category: "client",
     editable: true,
@@ -68,8 +65,21 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Years in Business",
     value: "15",
-    confidence: 88,
     source: "ACORD_125.pdf, Page 2",
+    category: "client",
+    editable: true,
+  },
+  {
+    field: "Loss History",
+    value: "2 claims / 3 years",
+    source: "loss_runs_2021-2024.pdf, Summary",
+    category: "client",
+    editable: true,
+  },
+  {
+    field: "Business Type",
+    value: "Manufacturing",
+    source: "ACORD_125.pdf, Page 1",
     category: "client",
     editable: true,
   },
@@ -78,7 +88,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Primary Location",
     value: "1234 Industrial Blvd, Houston, TX 77001",
-    confidence: 96,
     source: "ACORD_125.pdf, Page 2",
     category: "locations",
     editable: true,
@@ -86,7 +95,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Coastal Indicator",
     value: "No",
-    confidence: 85,
     source: "property_SOV.xlsx, Row 2",
     category: "locations",
     editable: true,
@@ -94,8 +102,14 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Brush Fire Zone",
     value: "Low Risk",
-    confidence: 78,
     source: "property_SOV.xlsx, Row 3",
+    category: "locations",
+    editable: true,
+  },
+  {
+    field: "States",
+    value: "Texas (TX)",
+    source: "ACORD_125.pdf, Page 2",
     category: "locations",
     editable: true,
   },
@@ -104,7 +118,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "2023 Loss - Date",
     value: "03/15/2023",
-    confidence: 99,
     source: "loss_runs_2021-2024.pdf, Page 1",
     category: "losses",
     editable: true,
@@ -112,7 +125,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "2023 Loss - Cause",
     value: "Equipment Breakdown",
-    confidence: 94,
     source: "loss_runs_2021-2024.pdf, Page 1",
     category: "losses",
     editable: true,
@@ -120,7 +132,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "2023 Loss - Paid",
     value: "$45,000",
-    confidence: 97,
     source: "loss_runs_2021-2024.pdf, Page 1",
     category: "losses",
     editable: true,
@@ -128,7 +139,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "2022 Loss - Date",
     value: "08/22/2022",
-    confidence: 99,
     source: "loss_runs_2021-2024.pdf, Page 2",
     category: "losses",
     editable: true,
@@ -136,7 +146,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "2022 Loss - Cause",
     value: "Slip and Fall",
-    confidence: 91,
     source: "loss_runs_2021-2024.pdf, Page 2",
     category: "losses",
     editable: true,
@@ -144,7 +153,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "2022 Loss - Paid",
     value: "$12,500",
-    confidence: 96,
     source: "loss_runs_2021-2024.pdf, Page 2",
     category: "losses",
     editable: true,
@@ -154,7 +162,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Total Insured Value",
     value: "$2,500,000",
-    confidence: 98,
     source: "property_SOV.xlsx, Row 1",
     category: "property",
     editable: true,
@@ -162,7 +169,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Construction Type",
     value: "Masonry Non-Combustible",
-    confidence: 89,
     source: "property_SOV.xlsx, Row 4",
     category: "property",
     editable: true,
@@ -170,7 +176,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Roof Age",
     value: "8 years",
-    confidence: 82,
     source: "property_SOV.xlsx, Row 5",
     category: "property",
     editable: true,
@@ -178,8 +183,14 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Sprinkler System",
     value: "Full Coverage",
-    confidence: 94,
     source: "property_SOV.xlsx, Row 6",
+    category: "property",
+    editable: true,
+  },
+  {
+    field: "Safety Controls",
+    value: "Sprinklers, Security",
+    source: "property_SOV.xlsx, Row 7",
     category: "property",
     editable: true,
   },
@@ -188,7 +199,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "General Liability",
     value: "$1M/$2M",
-    confidence: 93,
     source: "ACORD_125.pdf, Page 3",
     category: "coverage",
     editable: true,
@@ -196,7 +206,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Property Coverage",
     value: "$2.5M",
-    confidence: 96,
     source: "ACORD_125.pdf, Page 3",
     category: "coverage",
     editable: true,
@@ -204,7 +213,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Umbrella Coverage",
     value: "$5M",
-    confidence: 87,
     source: "ACORD_125.pdf, Page 4",
     category: "coverage",
     editable: true,
@@ -212,7 +220,6 @@ const mockExtractedData: ExtractedEntity[] = [
   {
     field: "Cyber Liability",
     value: "Requested",
-    confidence: 75,
     source: "ACORD_125.pdf, Page 4",
     category: "coverage",
     editable: true,
@@ -220,8 +227,8 @@ const mockExtractedData: ExtractedEntity[] = [
 ]
 
 function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
+  const { updateExtractedData } = useExtraction()
   const [extractionComplete, setExtractionComplete] = useState(false)
-  const [showLowConfidence, setShowLowConfidence] = useState(false)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [extractedData, setExtractedData] = useState<ExtractedEntity[]>(mockExtractedData)
   const [editValue, setEditValue] = useState("")
@@ -234,7 +241,7 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
     return () => clearTimeout(timer)
   }, [])
 
-  const filteredData = showLowConfidence ? extractedData.filter((item) => item.confidence < 90) : extractedData
+  const filteredData = extractedData
 
   const handleEdit = (field: string, currentValue: string) => {
     setEditingField(field)
@@ -243,8 +250,10 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
 
   const handleSaveEdit = (field: string) => {
     setExtractedData((prev) =>
-      prev.map((item) => (item.field === field ? { ...item, value: editValue, confidence: 100 } : item)),
+      prev.map((item) => (item.field === field ? { ...item, value: editValue } : item)),
     )
+    // Update the context with the new value
+    updateExtractedData(field, editValue)
     setEditingField(null)
     setEditValue("")
   }
@@ -254,31 +263,6 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
     setEditValue("")
   }
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 95) return "text-green-600"
-    if (confidence >= 85) return "text-yellow-600"
-    return "text-red-600"
-  }
-
-  const getConfidenceBadge = (confidence: number) => {
-    if (confidence >= 95)
-      return (
-        <Badge variant="default" className="bg-green-100 text-green-700">
-          High
-        </Badge>
-      )
-    if (confidence >= 85)
-      return (
-        <Badge variant="default" className="bg-yellow-100 text-yellow-700">
-          Medium
-        </Badge>
-      )
-    return (
-      <Badge variant="default" className="bg-red-100 text-red-700">
-        Low
-      </Badge>
-    )
-  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -320,14 +304,6 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
         <>
           {/* Control Buttons */}
           <div className="flex items-center gap-4">
-            <Button
-              variant={showLowConfidence ? "default" : "outline"}
-              onClick={() => setShowLowConfidence(!showLowConfidence)}
-              className="font-serif"
-            >
-              <AlertCircle className="h-4 w-4 mr-2" />
-              Review Low Confidence ({extractedData.filter((item) => item.confidence < 90).length})
-            </Button>
             <Button variant="outline" className="font-serif bg-transparent">
               Accept All
             </Button>
@@ -344,7 +320,6 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                   <TableRow>
                     <TableHead>Field</TableHead>
                     <TableHead>Value</TableHead>
-                    <TableHead>Confidence</TableHead>
                     <TableHead>Source</TableHead>
                     <TableHead className=" w-20">Actions</TableHead>
                   </TableRow>
@@ -372,14 +347,6 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                         ) : (
                           item.value
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getConfidenceBadge(item.confidence)}
-                          <span className={cn("text-sm ", getConfidenceColor(item.confidence))}>
-                            {item.confidence}%
-                          </span>
-                        </div>
                       </TableCell>
                       <TableCell className=" text-sm text-muted-foreground">{item.source}</TableCell>
                       <TableCell>
@@ -423,9 +390,8 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                       .map((item) => (
                         <div key={item.field}>
                           <Label>{item.field}</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Input value={item.value} readOnly className="flex-1" />
-                            {getConfidenceBadge(item.confidence)}
+                          <div className="mt-1">
+                            <Input value={item.value} readOnly />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 ">Source: {item.source}</p>
                         </div>
@@ -447,9 +413,8 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                       .map((item) => (
                         <div key={item.field}>
                           <Label>{item.field}</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Input value={item.value} readOnly className="flex-1" />
-                            {getConfidenceBadge(item.confidence)}
+                          <div className="mt-1">
+                            <Input value={item.value} readOnly />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 ">Source: {item.source}</p>
                         </div>
@@ -475,7 +440,6 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                             <Label>{item.field.replace("2023 Loss - ", "")}</Label>
                             <div className="flex items-center gap-2 mt-1">
                               <Input value={item.value} readOnly className="flex-1" />
-                              {getConfidenceBadge(item.confidence)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1 ">Source: {item.source}</p>
                           </div>
@@ -492,7 +456,6 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                             <Label>{item.field.replace("2022 Loss - ", "")}</Label>
                             <div className="flex items-center gap-2 mt-1">
                               <Input value={item.value} readOnly className="flex-1" />
-                              {getConfidenceBadge(item.confidence)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1 font-serif">Source: {item.source}</p>
                           </div>
@@ -515,9 +478,8 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                       .map((item) => (
                         <div key={item.field}>
                           <Label>{item.field}</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Input value={item.value} readOnly className="flex-1" />
-                            {getConfidenceBadge(item.confidence)}
+                          <div className="mt-1">
+                            <Input value={item.value} readOnly />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 ">Source: {item.source}</p>
                         </div>
@@ -539,9 +501,8 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
                       .map((item) => (
                         <div key={item.field}>
                           <Label className="font-serif">{item.field}</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Input value={item.value} readOnly className="flex-1" />
-                            {getConfidenceBadge(item.confidence)}
+                          <div className="mt-1">
+                            <Input value={item.value} readOnly />
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 font-serif">Source: {item.source}</p>
                         </div>

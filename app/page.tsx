@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { ExtractionProvider } from "@/lib/extraction-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { StepperNavigation } from "@/components/stepper-navigation"
@@ -119,7 +120,8 @@ export default function BrokerGeniePage() {
 
   if (showNavigation) {
     return (
-      <div className="min-h-screen bg-background">
+      <ExtractionProvider>
+        <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-50 bg-white border-b border-black/8 shadow-sm ml-64">
           <div className="h-[62px] px-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -188,6 +190,7 @@ export default function BrokerGeniePage() {
           </main>
         </div>
       </div>
+      </ExtractionProvider>
     )
   }
 

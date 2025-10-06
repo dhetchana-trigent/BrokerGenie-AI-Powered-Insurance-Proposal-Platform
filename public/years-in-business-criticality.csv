@@ -1,0 +1,11 @@
+Years in Business,Criticality
+Less than 1 year,High
+1-2 years,High
+3-5 years,Medium
+6-10 years,Medium
+11-15 years,Low
+16-20 years,Low
+21-30 years,Low
+30+ years,Low
+New Startup,High
+Well-established (40+ years),Low

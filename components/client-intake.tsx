@@ -31,26 +31,26 @@ interface ClientData {
 
 const clientOptions: ClientData[] = [
   {
-    id: "techflow",
-    name: "TechFlow Solutions Inc.",
-    industry: "Technology",
-    businessName: "TechFlow Solutions Inc.",
-    naicsOperations: "541511 - Custom Computer Programming Services",
-    states: "CA, NY, TX",
-    locations: "3",
-    headcount: "45",
-    revenuePayroll: "$8,500,000 annual revenue",
+    id: "Acme Manufacturing",
+    name: "Acme Manufacturing",
+    industry: "Manufacturing",
+    businessName: "Acme Manufacturing Inc.",
+    naicsOperations: "332710 – Machine Shops",
+    states: "TX",
+    locations: "1",
+    headcount: "15 years in business",
+    revenuePayroll: "Total Insured Value: $2,500,000",
     priorPolicies:
-      "Current GL policy with Hartford ($1M/$2M limits), Property coverage with Travelers ($2M TIV), Cyber policy with AIG ($1M limit). No recent claims in past 3 years.",
+      "FEIN: 12-3456789. Primary Location: 1234 Industrial Blvd, Houston, TX 77001. Construction: Masonry Non-Combustible. Sprinkler: Full Coverage. Roof Age: 8 years. Coastal Indicator: No. Brush Fire Zone: Low Risk.",
     desiredLimits:
-      "General Liability: $2M/$4M, Property: $3M TIV with $5K deductible, Cyber: $2M limit, Professional Liability: $1M/$3M, Employment Practices: $1M",
-    primaryContact: "Sarah Johnson, Risk Manager\nsarah.johnson@techflow.com\n(555) 123-4567",
+      "General Liability: $1M/$2M (adjust as needed). Property aligned to TIV $2,500,000; deductible configurable.",
+    primaryContact: "John Smith, Operations Manager\njohn.smith@acmemfg.com\n(713) 555-0123",
     status: "active"
   },
   {
     id: "dummy",
     name: "Global Manufacturing Corp.",
-    industry: "Manufacturing",
+    industry: "Technology",
     businessName: "Global Manufacturing Corp.",
     naicsOperations: "336310 - Motor Vehicle Gasoline Engine and Engine Parts Manufacturing",
     states: "TX, OH, MI",
@@ -281,11 +281,11 @@ export function ClientIntake({ onNext }: ClientIntakeProps) {
         <Button variant="outline" className="bg-transparent">
           Save Draft
         </Button>
-        {selectedClient?.id === "techflow" ? (
+        {selectedClient?.id === "Acme Manufacturing" ? (
           <Button onClick={() => onNext?.()}>Next: Upload Documents</Button>
         ) : (
           <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <span>Demo client - Select TechFlow Solutions Inc. to proceed</span>
+            <span>Demo client - Select Acme Manufacturing to proceed</span>
           </div>
         )}
       </div>

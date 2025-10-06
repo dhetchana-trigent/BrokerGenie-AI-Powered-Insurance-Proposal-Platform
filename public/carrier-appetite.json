@@ -1,0 +1,69 @@
+[
+  {
+    "id": "LM",
+    "name": "Liberty Mutual",
+    "summary": "Strong appetite for manufacturing in Texas",
+    "appetiteRules": {
+      "businessClass": [
+        { "type": "include", "values": ["Manufacturing"], "condition": null }
+      ],
+      "geography": [
+        { "type": "include", "states": ["TX"], "condition": null }
+      ],
+      "tiv": { "min": 0, "max": 5000000, "condition": null },
+      "yearsInBusiness": { "min": 0, "max": null, "condition": null },
+      "lossHistory": { "maxClaims": 5, "maxSeverity": "medium", "condition": null }
+    },
+    "strengths": [
+      "Manufacturing class expertise",
+      "Texas market presence", 
+      "TIV capacity up to $5M"
+    ],
+    "concerns": []
+  },
+  {
+    "id": "ZU",
+    "name": "Zurich",
+    "summary": "Class allowed but requires loss control",
+    "appetiteRules": {
+      "businessClass": [
+        { "type": "conditional", "values": ["Manufacturing"], "condition": "requires safety inspection" }
+      ],
+      "geography": [
+        { "type": "include", "states": ["Any"], "condition": null }
+      ],
+      "tiv": { "min": 1000000, "max": null, "condition": "higher minimum premiums" },
+      "yearsInBusiness": { "min": 0, "max": null, "condition": null },
+      "lossHistory": { "maxClaims": 4, "maxSeverity": "medium", "condition": null }
+    },
+    "strengths": [
+      "Large account capabilities",
+      "Risk engineering services"
+    ],
+    "concerns": [
+      "Requires safety inspection",
+      "Higher minimum premiums"
+    ]
+  },
+  {
+    "id": "AI",
+    "name": "AIG",
+    "summary": "Manufacturing moratorium in Texas",
+    "appetiteRules": {
+      "businessClass": [
+        { "type": "exclude", "values": ["Manufacturing"], "condition": "moratorium in Texas" }
+      ],
+      "geography": [
+        { "type": "exclude", "states": ["TX"], "condition": "geographic limitations" }
+      ],
+      "tiv": { "min": 0, "max": null, "condition": null },
+      "yearsInBusiness": { "min": 0, "max": null, "condition": null },
+      "lossHistory": { "maxClaims": null, "maxSeverity": null, "condition": null }
+    },
+    "strengths": [],
+    "concerns": [
+      "Current underwriting restrictions",
+      "Geographic limitations"
+    ]
+  }
+]
