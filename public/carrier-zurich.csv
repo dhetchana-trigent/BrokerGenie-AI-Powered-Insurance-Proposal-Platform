@@ -1,0 +1,4 @@
+id,name,summary,businessClassRuleType,businessClassValues,includeBusinessClassValues,conditionalBusinessClassValues,excludeBusinessClassValues,statesRuleType,statesList,tivMin,tivMax,yearsMin,yearsMax,lossMaxClaims,lossMaxSeverity,employeeMin,employeeMax,hasSprinklersRequired,constructionTypes,strengths,concerns
+ZU,Zurich,Strong appetite for Technology; Manufacturing allowed with controls,, ,Technology,Manufacturing,,include,Any,1000000,,0,,4,medium,25,,Yes,Steel Frame|Masonry Non-Combustible|Fire Resistive,Large account capabilities|Risk engineering services|Technology class expertise,Requires safety inspection|Higher minimum premiums
+
+

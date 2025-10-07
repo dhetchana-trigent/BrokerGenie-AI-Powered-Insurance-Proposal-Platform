@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import { useExtraction } from "@/lib/extraction-context"
 
 interface PackageBuilderProps {
-  onNext?: () => void
+  onNext?: (selectedPackageData?: any) => void
 }
 
 interface CoverageLine {
@@ -39,8 +39,6 @@ interface PackageOption {
   totalPremium: number
   monthlyPremium: number
   features: string[]
-  recommended: boolean
-  customizable?: boolean
 }
 
 export function PackageBuilder({ onNext }: PackageBuilderProps) {
@@ -49,7 +47,7 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
   const [selectedPackage, setSelectedPackage] = useState<string>("")
   const [packageOptions, setPackageOptions] = useState<PackageOption[]>([])
   const [coverageLines, setCoverageLines] = useState<CoverageLine[]>([])
-  const [customPackageConfig, setCustomPackageConfig] = useState<CoverageLine[]>([])
+  const [carrierName, setCarrierName] = useState<string | null>(null)
 
 
   // Generate dynamic package options based on business data
@@ -78,22 +76,108 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
     // Risk adjustments
     const riskMultiplier = isHighRisk ? 1.3 : (isEstablished && hasGoodSafety ? 0.9 : 1.0)
     
+    // Apply small carrier-specific variations
+    const carrierMultiplier = carrierName === 'Liberty Mutual' ? 0.97
+      : carrierName === 'Zurich' ? 1.03
+      : carrierName === 'AIG' ? 1.08
+      : 1.0
+
+    const isAIG = carrierName === 'AIG'
+    const isZurich = carrierName === 'Zurich'
+
+    // Finance-specific base premiums (used for AIG finance packages)
+    const baseDirectorsOfficers = 1800
+    const baseProfessionalLiability = 2200
+    const baseCrime = 1000
+    const baseFiduciary = 900
+
+    // Technology-specific base premiums (used for Zurich technology packages)
+    const baseTechEO = 2000
+    const baseNetworkSecurity = 1500
+    const baseMediaLiability = 900
+    const baseBreachResponse = 800
+
     const packages: PackageOption[] = [
       {
         id: "essential",
-        name: "Essential Coverage",
-        description: "Basic protection meeting minimum requirements",
+        name: carrierName ? (isAIG ? `AIG Finance Core` : isZurich ? `Zurich Tech Core` : `${carrierName} Essential`) : "Essential Coverage",
+        description: isAIG ? "Core protection tailored for financial services" : isZurich ? "Core cyber and tech liability protection" : "Basic protection meeting minimum requirements",
         badge: "Budget-Friendly",
-        badgeVariant: "secondary",
+        badgeVariant: "default",
         icon: Shield,
-        coverageLines: [
+        coverageLines: isAIG ? [
+          {
+            id: "eo",
+            name: "Professional Liability (E&O)",
+            description: "Covers errors, omissions, and negligence in professional services",
+            included: true,
+            limit: "$1M",
+            premium: Math.round(baseProfessionalLiability * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "do",
+            name: "Directors & Officers (D&O)",
+            description: "Protects directors and officers against management decisions",
+            included: false,
+            limit: "$1M",
+            premium: Math.round(baseDirectorsOfficers * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "crime",
+            name: "Crime / Employee Dishonesty",
+            description: "Losses from fraud, theft, and employee dishononesty",
+            included: false,
+            limit: "$100k",
+            premium: Math.round(baseCrime * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          }
+        ] : isZurich ? [
+          {
+            id: "cyber",
+            name: "Cyber Liability",
+            description: "Protection for data breaches, ransomware, and cyber extortion",
+            included: true,
+            limit: "$1M",
+            premium: Math.round(baseCyber * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "tech_eo",
+            name: "Technology E&O",
+            description: "Errors & omissions for software and technology services",
+            included: false,
+            limit: "$1M",
+            premium: Math.round(baseTechEO * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "network",
+            name: "Network Security & Privacy",
+            description: "Liability arising from unauthorized access or data privacy events",
+            included: false,
+            limit: "$1M",
+            premium: Math.round(baseNetworkSecurity * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "media",
+            name: "Media Liability",
+            description: "IP infringement and media content liabilities",
+            included: false,
+            limit: "$500k",
+            premium: Math.round(baseMediaLiability * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          }
+        ] : [
           {
             id: "gl",
             name: "General Liability",
             description: "Protects against third-party bodily injury and property damage claims",
             included: true,
             limit: "$1M/$2M",
-            premium: Math.round(baseGL * riskMultiplier),
+            premium: Math.round(baseGL * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
@@ -102,7 +186,7 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Covers buildings, equipment, and business personal property",
             included: true,
             limit: `$${tivValue.toLocaleString()}`,
-            premium: Math.round(baseProperty * riskMultiplier),
+            premium: Math.round(baseProperty * riskMultiplier * carrierMultiplier),
             icon: Building2
           },
           {
@@ -111,7 +195,7 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Protects against data breaches and cyber attacks",
             included: false,
             limit: "$1M",
-            premium: Math.round(baseCyber * riskMultiplier),
+            premium: Math.round(baseCyber * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
@@ -120,7 +204,7 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Covers employment-related claims and lawsuits",
             included: false,
             limit: "$1M",
-            premium: Math.round(baseEPLI * riskMultiplier),
+            premium: Math.round(baseEPLI * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
@@ -129,34 +213,97 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Additional liability coverage above primary policies",
             included: false,
             limit: "$2M",
-            premium: Math.round(baseUmbrella * riskMultiplier),
+            premium: Math.round(baseUmbrella * riskMultiplier * carrierMultiplier),
             icon: Shield
           }
         ],
         totalPremium: 0,
         monthlyPremium: 0,
-        features: [
+        features: isAIG ? [
+          "E&O included",
+          "Optional D&O",
+          "Optional Crime Coverage"
+        ] : isZurich ? [
+          "Core Cyber Protection",
+          "Optional Technology E&O",
+          "Optional Network Security & Media"
+        ] : [
           "General Liability Coverage",
           "Property Protection",
           "Basic Risk Management"
         ],
-        recommended: false
       },
       {
         id: "balanced",
-        name: "Balanced Protection",
-        description: "Customize your coverage to match your specific needs",
-        badge: "Customizable",
+        name: carrierName ? (isAIG ? `AIG Finance Advantage` : isZurich ? `Zurich Tech Advantage` : `${carrierName} Balanced`) : "Balanced Protection",
+        description: isAIG ? "Expanded finance coverages with stronger limits" : isZurich ? "Expanded technology coverages with stronger limits" : "Comprehensive coverage with essential endorsements",
+        badge: "Best Value",
         badgeVariant: "default",
         icon: Target,
-        coverageLines: [
+        coverageLines: isAIG ? [
+          {
+            id: "eo",
+            name: "Professional Liability (E&O)",
+            description: "Covers errors, omissions, and negligence in professional services",
+            included: true,
+            limit: "$2M",
+            premium: Math.round(baseProfessionalLiability * 1.2 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "do",
+            name: "Directors & Officers (D&O)",
+            description: "Protects directors and officers against management decisions",
+            included: true,
+            limit: "$1M",
+            premium: Math.round(baseDirectorsOfficers * 1.2 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "crime",
+            name: "Crime / Employee Dishonesty",
+            description: "Losses from fraud, theft, and employee dishonesty",
+            included: true,
+            limit: "$250k",
+            premium: Math.round(baseCrime * 1.1 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          }
+        ] : isZurich ? [
+          {
+            id: "cyber",
+            name: "Cyber Liability",
+            description: "Protection for data breaches, ransomware, and cyber extortion",
+            included: true,
+            limit: "$2M",
+            premium: Math.round(baseCyber * 1.2 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "tech_eo",
+            name: "Technology E&O",
+            description: "Errors & omissions for software and technology services",
+            included: true,
+            limit: "$2M",
+            premium: Math.round(baseTechEO * 1.2 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "network",
+            name: "Network Security & Privacy",
+            description: "Liability arising from unauthorized access or data privacy events",
+            included: true,
+            limit: "$1M",
+            premium: Math.round(baseNetworkSecurity * 1.1 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          }
+        ] : [
           {
             id: "gl",
             name: "General Liability",
             description: "Protects against third-party bodily injury and property damage claims",
             included: true,
             limit: "$2M/$4M",
-            premium: Math.round(baseGL * 1.2 * riskMultiplier),
+            premium: Math.round(baseGL * 1.2 * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
@@ -165,64 +312,144 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Covers buildings, equipment, and business personal property",
             included: true,
             limit: `$${tivValue.toLocaleString()}`,
-            premium: Math.round(baseProperty * riskMultiplier),
+            premium: Math.round(baseProperty * riskMultiplier * carrierMultiplier),
             icon: Building2
           },
           {
             id: "cyber",
             name: "Cyber Liability",
             description: "Protects against data breaches and cyber attacks",
-            included: false,
+            included: true,
             limit: "$2M",
-            premium: Math.round(baseCyber * riskMultiplier),
+            premium: Math.round(baseCyber * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
             id: "epli",
             name: "Employment Practices",
             description: "Covers employment-related claims and lawsuits",
-            included: false,
+            included: true,
             limit: "$1M",
-            premium: Math.round(baseEPLI * riskMultiplier),
+            premium: Math.round(baseEPLI * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
             id: "umbrella",
             name: "Umbrella Liability",
             description: "Additional liability coverage above primary policies",
-            included: false,
+            included: true,
             limit: "$5M",
-            premium: Math.round(baseUmbrella * 1.5 * riskMultiplier),
+            premium: Math.round(baseUmbrella * 1.5 * riskMultiplier * carrierMultiplier),
             icon: Shield
           }
         ],
         totalPremium: 0,
         monthlyPremium: 0,
-        features: [
+        features: isAIG ? [
+          "E&O and D&O included",
+          "Crime coverage included",
+          "Cyber and Umbrella protection"
+        ] : isZurich ? [
+          "Cyber + Tech E&O included",
+          "Network Security included",
+          "Tech-focused limits"
+        ] : [
           "Enhanced General Liability",
-          "Property Protection",
-          "Choose Your Endorsements",
-          "Flexible Coverage Options",
-          "Tailored Risk Management"
+          "Cyber Protection",
+          "Employment Practices Coverage",
+          "Umbrella Protection",
+          "Comprehensive Risk Management"
         ],
-        recommended: true,
-        customizable: true
       },
       {
         id: "comprehensive",
-        name: "Comprehensive Shield",
-        description: "Maximum protection with premium endorsements",
+        name: carrierName ? (isAIG ? `AIG Finance Elite` : isZurich ? `Zurich Tech Elite` : `${carrierName} Comprehensive`) : "Comprehensive Shield",
+        description: isAIG ? "Elite finance program with highest limits and extras" : isZurich ? "Elite technology program with highest cyber/tech limits" : "Maximum protection with premium endorsements",
         badge: "Premium",
-        badgeVariant: "outline",
+        badgeVariant: "default",
         icon: Star,
-        coverageLines: [
+        coverageLines: isAIG ? [
+          {
+            id: "eo",
+            name: "Professional Liability (E&O)",
+            description: "Covers errors, omissions, and negligence in professional services",
+            included: true,
+            limit: "$5M",
+            premium: Math.round(baseProfessionalLiability * 1.5 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "do",
+            name: "Directors & Officers (D&O)",
+            description: "Protects directors and officers against management decisions",
+            included: true,
+            limit: "$2M",
+            premium: Math.round(baseDirectorsOfficers * 1.5 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "crime",
+            name: "Crime / Employee Dishonesty",
+            description: "Losses from fraud, theft, and employee dishonesty",
+            included: true,
+            limit: "$500k",
+            premium: Math.round(baseCrime * 1.3 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "fiduciary",
+            name: "Fiduciary Liability",
+            description: "Claims alleging mismanagement of employee benefit plans",
+            included: true,
+            limit: "$1M",
+            premium: Math.round(baseFiduciary * 1.2 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          }
+        ] : isZurich ? [
+          {
+            id: "cyber",
+            name: "Cyber Liability",
+            description: "Protection for data breaches, ransomware, and cyber extortion",
+            included: true,
+            limit: "$5M",
+            premium: Math.round(baseCyber * 1.5 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "tech_eo",
+            name: "Technology E&O",
+            description: "Errors & omissions for software and technology services",
+            included: true,
+            limit: "$5M",
+            premium: Math.round(baseTechEO * 1.5 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "network",
+            name: "Network Security & Privacy",
+            description: "Liability arising from unauthorized access or data privacy events",
+            included: true,
+            limit: "$2M",
+            premium: Math.round(baseNetworkSecurity * 1.3 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          },
+          {
+            id: "breach",
+            name: "Data Breach Response",
+            description: "Forensics, notification costs, and public relations support",
+            included: true,
+            limit: "$500k",
+            premium: Math.round(baseBreachResponse * 1.2 * riskMultiplier * carrierMultiplier),
+            icon: Shield
+          }
+        ] : [
           {
             id: "gl",
             name: "General Liability",
             description: "Protects against third-party bodily injury and property damage claims",
             included: true,
             limit: "$5M/$10M",
-            premium: Math.round(baseGL * 1.5 * riskMultiplier),
+            premium: Math.round(baseGL * 1.5 * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
@@ -231,7 +458,7 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Covers buildings, equipment, and business personal property",
             included: true,
             limit: `$${tivValue.toLocaleString()}`,
-            premium: Math.round(baseProperty * 1.1 * riskMultiplier),
+            premium: Math.round(baseProperty * 1.1 * riskMultiplier * carrierMultiplier),
             icon: Building2
           },
           {
@@ -240,7 +467,7 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Protects against data breaches and cyber attacks",
             included: true,
             limit: "$5M",
-            premium: Math.round(baseCyber * 1.5 * riskMultiplier),
+            premium: Math.round(baseCyber * 1.5 * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
@@ -249,7 +476,7 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Covers employment-related claims and lawsuits",
             included: true,
             limit: "$2M",
-            premium: Math.round(baseEPLI * 1.3 * riskMultiplier),
+            premium: Math.round(baseEPLI * 1.3 * riskMultiplier * carrierMultiplier),
             icon: Shield
           },
           {
@@ -258,13 +485,21 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             description: "Additional liability coverage above primary policies",
             included: true,
             limit: "$10M",
-            premium: Math.round(baseUmbrella * 2 * riskMultiplier),
+            premium: Math.round(baseUmbrella * 2 * riskMultiplier * carrierMultiplier),
             icon: Shield
           }
         ],
         totalPremium: 0,
         monthlyPremium: 0,
-        features: [
+        features: isAIG ? [
+          "Highest E&O and D&O limits",
+          "Crime and Fiduciary included",
+          "High-limit Umbrella and Cyber"
+        ] : isZurich ? [
+          "Highest Cyber + Tech E&O limits",
+          "Network Security and Breach Response included",
+          "Tech-focused elite protection"
+        ] : [
           "Maximum Liability Limits",
           "Advanced Cyber Protection",
           "Enhanced Employment Coverage",
@@ -272,7 +507,6 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
           "Premium Risk Management",
           "Priority Claims Handling"
         ],
-        recommended: false
       }
     ]
 
@@ -290,31 +524,34 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
     })
   }
 
-  // Initialize package options when component mounts or data changes
+  // Read selected carrier on mount
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('bg_selected_carrier')
+      setCarrierName(stored)
+    } catch {}
+  }, [])
+
+  // Regenerate package options whenever carrier or extracted inputs change
   useEffect(() => {
     const options = generatePackageOptions()
     setPackageOptions(options)
-    
-    // Set default selection to recommended package
-    const recommended = options.find(pkg => pkg.recommended)
-    if (recommended) {
-      setSelectedPackage(recommended.id)
-      setCoverageLines(recommended.coverageLines)
+
+    if (selectedPackage) {
+      const selectedPkg = options.find(pkg => pkg.id === selectedPackage)
+      if (selectedPkg) {
+        setCoverageLines(selectedPkg.coverageLines)
+      }
     }
-  }, [getBusinessType(), getTotalInsuredValue(), getYearsInBusiness(), getLossHistory(), getSafetyControls()])
+  }, [carrierName, getBusinessType(), getTotalInsuredValue(), getYearsInBusiness(), getLossHistory(), getSafetyControls()])
 
   // Update coverage lines when package selection changes
   useEffect(() => {
     const selectedPkg = packageOptions.find(pkg => pkg.id === selectedPackage)
     if (selectedPkg) {
-      if (selectedPkg.customizable) {
-        // For customizable packages, use custom config if available, otherwise use package defaults
-        setCoverageLines(customPackageConfig.length > 0 ? customPackageConfig : selectedPkg.coverageLines)
-      } else {
-        setCoverageLines(selectedPkg.coverageLines)
-      }
+      setCoverageLines(selectedPkg.coverageLines)
     }
-  }, [selectedPackage, packageOptions, customPackageConfig])
+  }, [selectedPackage, packageOptions])
 
   // Calculate total premium
   const totalPremium = coverageLines
@@ -324,40 +561,28 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
   const finalPremium = totalPremium
 
   const toggleCoverage = (id: string) => {
-    const updatedLines = coverageLines.map(line => 
-      line.id === id ? { ...line, included: !line.included } : line
+    setCoverageLines(prev => 
+      prev.map(line => 
+        line.id === id ? { ...line, included: !line.included } : line
+      )
     )
-    
-    setCoverageLines(updatedLines)
-    
-    // If current package is customizable, update the custom config
-    const selectedPkg = packageOptions.find(pkg => pkg.id === selectedPackage)
-    if (selectedPkg?.customizable) {
-      setCustomPackageConfig(updatedLines)
-    }
   }
 
   const updateLimit = (id: string, limit: string) => {
-    const updatedLines = coverageLines.map(line => 
-      line.id === id ? { ...line, limit } : line
+    setCoverageLines(prev => 
+      prev.map(line => 
+        line.id === id ? { ...line, limit } : line
+      )
     )
-    
-    setCoverageLines(updatedLines)
-    
-    // If current package is customizable, update the custom config
-    const selectedPkg = packageOptions.find(pkg => pkg.id === selectedPackage)
-    if (selectedPkg?.customizable) {
-      setCustomPackageConfig(updatedLines)
-    }
   }
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Package Builder & Pricing</h1>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">{carrierName ? `${carrierName} | Package Builder & Pricing` : 'BrokerGenie | Package Builder & Pricing'}</h1>
         <p className="text-muted-foreground">
-          Build your insurance package based on your risk profile and coverage needs
+          {carrierName ? `Carrier-specific options and pricing tuned for ${carrierName}` : 'Build your insurance package based on your risk profile and coverage needs'}
         </p>
       </div>
 
@@ -439,18 +664,6 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
                             <Icon className="h-5 w-5 text-primary" />
                             <h3 className="font-semibold text-lg">{pkg.name}</h3>
                             <Badge variant={pkg.badgeVariant}>{pkg.badge}</Badge>
-                            {pkg.recommended && (
-                              <Badge variant="default" className="bg-green-600">
-                                <Star className="h-3 w-3 mr-1" />
-                                Recommended
-                              </Badge>
-                            )}
-                            {pkg.customizable && (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                <Target className="h-3 w-3 mr-1" />
-                                Customizable
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-sm text-muted-foreground mb-3">{pkg.description}</p>
                           
@@ -494,51 +707,52 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
             Coverage Lines
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {(() => {
-              const selectedPkg = packageOptions.find(pkg => pkg.id === selectedPackage)
-              if (selectedPkg?.customizable) {
-                return "Customize your coverage selection and limits below"
-              }
-              return "Coverage details for your selected package - customize as needed"
-            })()}
+            Coverage details for your selected package - customize as needed
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {coverageLines.map((line) => {
-            const Icon = line.icon
-            return (
-              <div key={line.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Icon className="h-5 w-5 text-primary" />
-                    <div>
-                      <h3 className="font-semibold">{line.name}</h3>
-                      <p className="text-sm text-muted-foreground">{line.description}</p>
+          {selectedPackage ? (
+            coverageLines.map((line) => {
+              const Icon = line.icon
+              return (
+                <div key={line.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5 text-primary" />
+                      <div>
+                        <h3 className="font-semibold">{line.name}</h3>
+                        <p className="text-sm text-muted-foreground">{line.description}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Limit</p>
-                      <Input
-                        value={line.limit}
-                        onChange={(e) => updateLimit(line.id, e.target.value)}
-                        className="w-32 text-sm"
-                        disabled={!line.included}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Limit</p>
+                        <Input
+                          value={line.limit}
+                          onChange={(e) => updateLimit(line.id, e.target.value)}
+                          className="w-32 text-sm"
+                          disabled={!line.included}
+                        />
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Premium</p>
+                        <p className="font-semibold">${line.premium.toLocaleString()}</p>
+                      </div>
+                      <Switch
+                        checked={line.included}
+                        onCheckedChange={() => toggleCoverage(line.id)}
                       />
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Premium</p>
-                      <p className="font-semibold">${line.premium.toLocaleString()}</p>
-                    </div>
-                    <Switch
-                      checked={line.included}
-                      onCheckedChange={() => toggleCoverage(line.id)}
-                    />
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Please select a package above to view coverage details</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -553,25 +767,46 @@ export function PackageBuilder({ onNext }: PackageBuilderProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total Annual Premium</span>
-              <span>${finalPremium.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Monthly Payment</span>
-              <span>${Math.round(finalPremium / 12).toLocaleString()}</span>
-            </div>
+            {selectedPackage ? (
+              <>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total Annual Premium</span>
+                  <span>${finalPremium.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Monthly Payment</span>
+                  <span>${Math.round(finalPremium / 12).toLocaleString()}</span>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Select a package to view pricing</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" className="bg-transparent">
-          Back: Carrier Fit & Compliance
-        </Button>
-        <Button onClick={onNext}>
-          Next: Activity
+      <div className="flex justify-end pt-6">
+        <Button 
+          onClick={() => {
+            const selectedPkg = packageOptions.find(pkg => pkg.id === selectedPackage)
+            if (selectedPkg) {
+              // Update the package with current calculated premium (including toggled coverage lines)
+              const updatedPackage = {
+                ...selectedPkg,
+                totalPremium: finalPremium,
+                monthlyPremium: Math.round(finalPremium / 12),
+                coverageLines: coverageLines // Include current coverage line states
+              }
+              onNext?.(updatedPackage)
+            }
+          }}
+          disabled={!selectedPackage}
+        >
+          Generate Proposal
         </Button>
       </div>
     </div>

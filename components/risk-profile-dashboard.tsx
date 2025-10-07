@@ -469,10 +469,7 @@ export function RiskProfileDashboard({ onNext }: RiskProfileDashboardProps) {
       </Card>
 
 
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" className="bg-transparent">
-          Back: Extract with AI
-        </Button>
+      <div className="flex justify-end pt-6">
         <Button onClick={onNext}>Next: Carrier Fit & Compliance</Button>
       </div>
     </div>

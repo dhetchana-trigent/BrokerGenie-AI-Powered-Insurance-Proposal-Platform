@@ -302,12 +302,7 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
 
       {extractionComplete && (
         <>
-          {/* Control Buttons */}
-          <div className="flex items-center gap-4">
-            <Button variant="outline" className="font-serif bg-transparent">
-              Accept All
-            </Button>
-          </div>
+          {/* Control Buttons - removed per request */}
 
           {/* Entities Table */}
           <Card className="shadow-sm">
@@ -515,10 +510,7 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
         </>
       )}
 
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" className="font-serif bg-transparent">
-          Back: Upload & Preview
-        </Button>
+      <div className="flex justify-end pt-6">
         <Button
           className="font-serif"
           disabled={!extractionComplete}
@@ -527,7 +519,7 @@ function AIExtractInterface({ onNext }: AIExtractInterfaceProps) {
             onNext?.()
           }}
         >
-          Next: Carrier Fit & Compliance
+          Next: Risk Profile
         </Button>
       </div>
     </div>

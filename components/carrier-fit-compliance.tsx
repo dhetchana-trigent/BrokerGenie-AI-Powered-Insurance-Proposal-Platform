@@ -26,6 +26,9 @@ interface CarrierAppetiteData {
     tiv: { min?: number; max?: number; condition?: string }
     yearsInBusiness: { min?: number; max?: number; condition?: string }
     lossHistory: { maxClaims?: number; maxSeverity?: string; condition?: string }
+    employees?: { min?: number; max?: number }
+    sprinklersRequired?: boolean
+    constructionTypes?: string[]
   }
   strengths: string[]
   concerns: string[]
@@ -44,6 +47,7 @@ interface CarrierAppetite {
 
 interface CarrierFitComplianceProps {
   onNext?: () => void
+  onSelectCarrier?: (carrierName: string) => void
 }
 
 const carrierAppetites: CarrierAppetite[] = [
@@ -75,8 +79,8 @@ const carrierAppetites: CarrierAppetite[] = [
 
 
 
-export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
-  const { getBusinessType, getYearsInBusiness } = useExtraction()
+export function CarrierFitCompliance({ onNext, onSelectCarrier }: CarrierFitComplianceProps) {
+  const { extractedData, getBusinessType, getYearsInBusiness, getTotalInsuredValue, getStates, getSafetyControls, getLossHistory } = useExtraction()
   const [carrierAppetiteData, setCarrierAppetiteData] = useState<CarrierAppetiteData[]>([])
   const [carrierFitResults, setCarrierFitResults] = useState<CarrierAppetite[]>([])
 
@@ -84,8 +88,75 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
   useEffect(() => {
     const loadCarrierAppetite = async () => {
       try {
-        const response = await fetch('/carrier-appetite.json')
-        const data: CarrierAppetiteData[] = await response.json()
+        // Load from CSV files and normalize into CarrierAppetiteData shape
+        const [libertyCsv, zurichCsv, aigCsv] = await Promise.all([
+          fetch('/carrier-liberty.csv').then(r => r.text()),
+          fetch('/carrier-zurich.csv').then(r => r.text()),
+          fetch('/carrier-aig.csv').then(r => r.text())
+        ])
+
+        const parseCsv = (csv: string) => {
+          const [header, ...rows] = csv.trim().split(/\r?\n/)
+          const cols = header.split(',')
+          return rows.map(line => {
+            const values = line.split(',')
+            const rec: any = {}
+            cols.forEach((c, i) => rec[c] = values[i])
+            return rec
+          })
+        }
+
+        const toAppetite = (rec: any): CarrierAppetiteData => {
+          const strengths = (rec.strengths || '').split('|').filter(Boolean)
+          const concerns = (rec.concerns || '').split('|').filter(Boolean)
+          const businessValues = (rec.businessClassValues || '').split('|').filter(Boolean)
+          const includeBusinessValues = (rec.includeBusinessClassValues || '').split('|').filter(Boolean)
+          const conditionalBusinessValues = (rec.conditionalBusinessClassValues || '').split('|').filter(Boolean)
+          const excludeBusinessValues = (rec.excludeBusinessClassValues || '').split('|').filter(Boolean)
+          const statesList = (rec.statesList || '').split('|').filter(Boolean)
+          const tivMax = rec.tivMax ? Number(rec.tivMax) : undefined
+          const tivMin = rec.tivMin ? Number(rec.tivMin) : undefined
+          const yearsMin = rec.yearsMin ? Number(rec.yearsMin) : undefined
+          const yearsMax = rec.yearsMax ? Number(rec.yearsMax) : undefined
+          const lossMaxClaims = rec.lossMaxClaims ? Number(rec.lossMaxClaims) : undefined
+          const employeeMin = rec.employeeMin ? Number(rec.employeeMin) : undefined
+          const employeeMax = rec.employeeMax ? Number(rec.employeeMax) : undefined
+          const hasSprinklersRequired = (rec.hasSprinklersRequired || '').toLowerCase() === 'yes'
+          const constructionTypes = (rec.constructionTypes || '').split('|').filter(Boolean)
+
+          // Build business class rules. Prefer split include/conditional/exclude fields if provided; otherwise fallback to single rule
+          const businessClassRules: CarrierAppetiteRule[] = []
+          if (includeBusinessValues.length > 0 || conditionalBusinessValues.length > 0 || excludeBusinessValues.length > 0) {
+            if (includeBusinessValues.length > 0) businessClassRules.push({ type: 'include', values: includeBusinessValues })
+            if (conditionalBusinessValues.length > 0) businessClassRules.push({ type: 'conditional', values: conditionalBusinessValues })
+            if (excludeBusinessValues.length > 0) businessClassRules.push({ type: 'exclude', values: excludeBusinessValues })
+          } else {
+            businessClassRules.push({ type: rec.businessClassRuleType as any, values: businessValues, condition: undefined })
+          }
+          return {
+            id: rec.id,
+            name: rec.name,
+            summary: rec.summary,
+            appetiteRules: {
+              businessClass: businessClassRules,
+              geography: [{ type: rec.statesRuleType as any, values: statesList as any, condition: undefined } as any],
+              tiv: { min: tivMin, max: tivMax },
+              yearsInBusiness: { min: yearsMin, max: yearsMax },
+              lossHistory: { maxClaims: lossMaxClaims, maxSeverity: rec.lossMaxSeverity },
+              employees: { min: employeeMin, max: employeeMax },
+              sprinklersRequired: hasSprinklersRequired || undefined,
+              constructionTypes: constructionTypes.length > 0 ? constructionTypes : undefined
+            },
+            strengths,
+            concerns
+          }
+        }
+
+        const data: CarrierAppetiteData[] = [
+          ...parseCsv(libertyCsv).map(toAppetite),
+          ...parseCsv(zurichCsv).map(toAppetite),
+          ...parseCsv(aigCsv).map(toAppetite)
+        ]
         setCarrierAppetiteData(data)
       } catch (error) {
         console.error('Failed to load carrier appetite data:', error)
@@ -101,11 +172,32 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
     if (carrierAppetiteData.length > 0) {
       const clientBusinessType = getBusinessType()
       const clientYearsInBusiness = parseInt(getYearsInBusiness())
-      const clientTIV = 2500000 // From context - you can add this to extraction context
-      const clientLocation = "TX" // From context - you can add this to extraction context
-      const clientLossHistory = 2 // From context - you can add this to extraction context
+      const clientTIV = (() => {
+        const raw = getTotalInsuredValue()
+        const num = Number((raw || '').toString().replace(/[^0-9]/g, ''))
+        return Number.isNaN(num) ? undefined : num
+      })()
+      const clientState = (() => {
+        const raw = getStates()
+        const m = /\(([^)]+)\)/.exec(raw || '')
+        return m ? m[1] : (raw || 'Any')
+      })()
+      const clientHasSprinklers = (() => {
+        const raw = getSafetyControls()
+        return /sprinkler/i.test(raw || '')
+      })()
+      const clientConstructionType = (() => {
+        // Extraction context includes Construction Type directly in extractedData; no getter
+        // We infer from Primary Location/other fields not necessary here; leave undefined to avoid penalizing
+        return undefined as string | undefined
+      })()
+      const clientLossClaims = (() => {
+        const raw = getLossHistory()
+        const m = /(\d+)/.exec(raw || '')
+        return m ? parseInt(m[1]) : undefined
+      })()
 
-      const results: CarrierAppetite[] = carrierAppetiteData.map(carrier => {
+      let results: CarrierAppetite[] = carrierAppetiteData.map(carrier => {
         let fit: "fit" | "conditional" | "not-fit" = "fit"
         let reason = carrier.summary
         let strengths = [...carrier.strengths]
@@ -131,9 +223,13 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
         }
 
         // Check TIV
-        if (carrier.appetiteRules.tiv.max && clientTIV > carrier.appetiteRules.tiv.max) {
+        if (carrier.appetiteRules.tiv.max && (clientTIV || 0) > carrier.appetiteRules.tiv.max) {
           if (fit === "fit") fit = "conditional"
-          concerns.push(`TIV ($${clientTIV.toLocaleString()}) exceeds carrier's max appetite of $${carrier.appetiteRules.tiv.max.toLocaleString()}`)
+          concerns.push(`TIV ($${(clientTIV || 0).toLocaleString()}) exceeds carrier max $${carrier.appetiteRules.tiv.max.toLocaleString()}`)
+        }
+        if (carrier.appetiteRules.tiv.min && (clientTIV || 0) < carrier.appetiteRules.tiv.min) {
+          if (fit === "fit") fit = "conditional"
+          concerns.push(`TIV below carrier minimum ($${carrier.appetiteRules.tiv.min.toLocaleString()})`)
         }
 
         // Check Years in Business
@@ -143,9 +239,39 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
         }
 
         // Check Loss History
-        if (carrier.appetiteRules.lossHistory.maxClaims && clientLossHistory > carrier.appetiteRules.lossHistory.maxClaims) {
+        if (carrier.appetiteRules.lossHistory.maxClaims && (clientLossClaims || 0) > carrier.appetiteRules.lossHistory.maxClaims) {
           if (fit === "fit") fit = "conditional"
-          concerns.push(`Loss history (${clientLossHistory} claims) exceeds carrier tolerance (${carrier.appetiteRules.lossHistory.maxClaims} max)`)
+          concerns.push(`Loss history (${clientLossClaims || 0} claims) exceeds carrier tolerance (${carrier.appetiteRules.lossHistory.maxClaims} max)`)
+        }
+
+        // Check Employees (if we had this data; currently ignored when unknown)
+        if (carrier.appetiteRules.employees) {
+          const employees: number | undefined = undefined
+          if (typeof employees === 'number') {
+            if (carrier.appetiteRules.employees.min && employees < carrier.appetiteRules.employees.min) {
+              if (fit === "fit") fit = "conditional"
+              concerns.push(`Employee count below minimum (${carrier.appetiteRules.employees.min})`)
+            }
+            if (carrier.appetiteRules.employees.max && employees > carrier.appetiteRules.employees.max) {
+              if (fit === "fit") fit = "conditional"
+              concerns.push(`Employee count above maximum (${carrier.appetiteRules.employees.max})`)
+            }
+          }
+        }
+
+        // Check Sprinklers
+        if (carrier.appetiteRules.sprinklersRequired && !clientHasSprinklers) {
+          if (fit === "fit") fit = "conditional"
+          concerns.push("Requires sprinkler protection")
+        }
+
+        // Check Construction Type
+        if (carrier.appetiteRules.constructionTypes && carrier.appetiteRules.constructionTypes.length > 0 && clientConstructionType) {
+          const allowed = carrier.appetiteRules.constructionTypes
+          if (!allowed.includes(clientConstructionType)) {
+            if (fit === "fit") fit = "conditional"
+            concerns.push(`Preferred construction: ${allowed.join(', ')}`)
+          }
         }
 
         return {
@@ -158,9 +284,30 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
         }
       })
 
+      // Tie-breaker: if multiple carriers are Fit for the same Business Type, prefer one and mark others Conditional
+      const fitCarriers = results.filter(r => r.fit === "fit")
+      if (fitCarriers.length > 1) {
+        const preferredByBusinessType: Record<string, string> = {
+          Technology: "Zurich",
+          Finance: "AIG",
+          Manufacturing: "Liberty Mutual",
+        }
+        const preferred = preferredByBusinessType[clientBusinessType] || fitCarriers[0]?.name
+        results = results.map(r => {
+          if (r.fit === "fit" && r.name !== preferred) {
+            return {
+              ...r,
+              fit: "conditional",
+              concerns: [...r.concerns, `Secondary fit; prioritized ${preferred} for ${clientBusinessType}`],
+            }
+          }
+          return r
+        })
+      }
+
       setCarrierFitResults(results)
     }
-  }, [carrierAppetiteData, getBusinessType, getYearsInBusiness])
+  }, [carrierAppetiteData, extractedData])
 
   const getFitColor = (fit: "fit" | "conditional" | "not-fit") => {
     switch (fit) {
@@ -203,7 +350,7 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {carrierFitResults.length > 0 ? carrierFitResults.map((carrier, index) => (
-              <div key={index} className={cn("p-4 rounded-lg border", getFitColor(carrier.fit))}>
+              <div key={index} className={cn("p-4 rounded-lg border h-full flex flex-col", getFitColor(carrier.fit))}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
@@ -248,9 +395,18 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
                     </ul>
                   </div>
                 )}
+                <div className="pt-3 mt-auto flex justify-end">
+                  <Button
+                    variant="outline"
+                    className="bg-white/70"
+                    onClick={() => onSelectCarrier?.(carrier.name)}
+                  >
+                    Build with {carrier.name}
+                  </Button>
+                </div>
               </div>
             )) : carrierAppetites.map((carrier, index) => (
-              <div key={index} className={cn("p-4 rounded-lg border", getFitColor(carrier.fit))}>
+              <div key={index} className={cn("p-4 rounded-lg border h-full flex flex-col", getFitColor(carrier.fit))}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
@@ -295,6 +451,15 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
                     </ul>
                   </div>
                 )}
+                <div className="pt-3 mt-auto flex justify-end">
+                  <Button
+                    variant="outline"
+                    className="bg-white/70"
+                    onClick={() => onSelectCarrier?.(carrier.name)}
+                  >
+                    Build with {carrier.name}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -304,25 +469,8 @@ export function CarrierFitCompliance({ onNext }: CarrierFitComplianceProps) {
 
 
       {/* Summary Banner */}
-      <Card className="shadow-sm border-accent/20 bg-accent/5">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <CheckCircle className="h-6 w-6 text-accent flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-accent mb-2">Carrier Fit Summary</h3>
-              <p className="text-sm text-foreground mb-3">
-                <strong>1 carrier</strong> shows strong fit, <strong>1 carrier</strong> conditional fit, <strong>1 carrier</strong> not a fit. 
-                Limited options available for this risk profile.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" className="bg-transparent">
-          Back: Risk Profile
-        </Button>
+      <div className="flex justify-end pt-6">
         <Button
           onClick={() => {
             console.log("[v0] Next: Package Builder button clicked, calling onNext")

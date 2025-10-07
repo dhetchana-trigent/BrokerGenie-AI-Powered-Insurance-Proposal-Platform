@@ -54,7 +54,7 @@ const clientOptions: ClientData[] = [
     businessName: "Global Manufacturing Corp.",
     naicsOperations: "336310 - Motor Vehicle Gasoline Engine and Engine Parts Manufacturing",
     states: "TX, OH, MI",
-    locations: "5",
+    locations: "3",
     headcount: "120",
     revenuePayroll: "$15,200,000 annual revenue",
     priorPolicies:
@@ -277,10 +277,7 @@ export function ClientIntake({ onNext }: ClientIntakeProps) {
         </Card>
       </div>
 
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" className="bg-transparent">
-          Save Draft
-        </Button>
+      <div className="flex justify-end pt-6">
         {selectedClient?.id === "Acme Manufacturing" ? (
           <Button onClick={() => onNext?.()}>Next: Upload Documents</Button>
         ) : (

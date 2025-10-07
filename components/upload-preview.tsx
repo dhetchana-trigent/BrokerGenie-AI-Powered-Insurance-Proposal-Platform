@@ -175,7 +175,7 @@ export function UploadPreview({ onNext }: UploadPreviewProps) {
                 onDrop={handleDrop}
               >
                 <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg mb-2">Upload your insurance documents</p>
+                <p className="text-lg mb-2">Upload your documents</p>
                 <p className="text-sm text-muted-foreground mb-4">
                   Drop files here or click "Choose Files" to select ACORDs, prior policies, loss runs, SOV, COI, and photos.
                 </p>
@@ -265,7 +265,7 @@ export function UploadPreview({ onNext }: UploadPreviewProps) {
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium text-muted-foreground mb-2">No files uploaded yet</p>
                 <p className="text-sm text-muted-foreground">
-                  Upload your insurance documents using the "Choose Files" button above or drag and drop them into the upload area.
+                  Upload your documents using the "Choose Files" button above or drag and drop them into the upload area.
                 </p>
               </CardContent>
             </Card>
@@ -315,10 +315,7 @@ export function UploadPreview({ onNext }: UploadPreviewProps) {
         </div>
       </div>
 
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" className="bg-transparent">
-          Back: Client Intake
-        </Button>
+      <div className="flex justify-end pt-6">
         <Button disabled={uploadedFiles.length === 0 || isExtracting} onClick={handleExtractWithAI}>
           {isExtracting ? "Extracting..." : "Extract with AI"}
         </Button>

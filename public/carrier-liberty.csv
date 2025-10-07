@@ -1,0 +1,4 @@
+id,name,summary,businessClassRuleType,businessClassValues,includeBusinessClassValues,conditionalBusinessClassValues,excludeBusinessClassValues,statesRuleType,statesList,tivMin,tivMax,yearsMin,yearsMax,lossMaxClaims,lossMaxSeverity,employeeMin,employeeMax,hasSprinklersRequired,constructionTypes,strengths,concerns
+LM,Liberty Mutual,Strong appetite for manufacturing and technology in Texas,,,Manufacturing|Technology,Finance,,include,TX|Any,0,20000000,1,,5,medium,10,500,Yes,Masonry Non-Combustible|Fire Resistive,Manufacturing class expertise|Texas market presence|TIV capacity up to $20M,Occasional rate hardening in specific sub-classes
+
+

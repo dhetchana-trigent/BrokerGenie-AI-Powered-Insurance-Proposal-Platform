@@ -352,10 +352,7 @@ export function TechFlowUpload({ onNext, onBack }: TechFlowUploadProps) {
         </div>
       </div>
 
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack}>
-          Back: Client Intake
-        </Button>
+      <div className="flex justify-end pt-6">
         <Button 
           disabled={!hasRequiredFiles() || isExtracting} 
           onClick={handleExtractWithAI}
@@ -366,6 +363,8 @@ export function TechFlowUpload({ onNext, onBack }: TechFlowUploadProps) {
     </div>
   )
 }
+
+
 
 
 

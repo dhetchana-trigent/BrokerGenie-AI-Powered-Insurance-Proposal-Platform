@@ -10,16 +10,18 @@
       "geography": [
         { "type": "include", "states": ["TX"], "condition": null }
       ],
-      "tiv": { "min": 0, "max": 5000000, "condition": null },
+      "tiv": { "min": 0, "max": 20000000, "condition": null },
       "yearsInBusiness": { "min": 0, "max": null, "condition": null },
       "lossHistory": { "maxClaims": 5, "maxSeverity": "medium", "condition": null }
     },
     "strengths": [
       "Manufacturing class expertise",
       "Texas market presence", 
-      "TIV capacity up to $5M"
+      "TIV capacity up to $20M"
     ],
-    "concerns": []
+    "concerns": [
+      "Occasional rate hardening in specific sub-classes"
+    ]
   },
   {
     "id": "ZU",
@@ -38,20 +40,22 @@
     },
     "strengths": [
       "Large account capabilities",
-      "Risk engineering services"
+      "Risk engineering services",
+      "Technology class expertise"
     ],
     "concerns": [
       "Requires safety inspection",
-      "Higher minimum premiums"
+      "Higher minimum premiums",
+      "Requires safety inspection"
     ]
   },
   {
     "id": "AI",
     "name": "AIG",
-    "summary": "Manufacturing moratorium in Texas",
+    "summary": "Selective appetite; underwriting restrictions apply",
     "appetiteRules": {
       "businessClass": [
-        { "type": "exclude", "values": ["Manufacturing"], "condition": "moratorium in Texas" }
+        { "type": "conditional", "values": ["Manufacturing"], "condition": "heightened underwriting review" }
       ],
       "geography": [
         { "type": "exclude", "states": ["TX"], "condition": "geographic limitations" }
@@ -60,7 +64,11 @@
       "yearsInBusiness": { "min": 0, "max": null, "condition": null },
       "lossHistory": { "maxClaims": null, "maxSeverity": null, "condition": null }
     },
-    "strengths": [],
+    "strengths": [
+      "Finance expertise",
+      "Global program capabilities",
+      "Complex risk structuring"
+    ],
     "concerns": [
       "Current underwriting restrictions",
       "Geographic limitations"

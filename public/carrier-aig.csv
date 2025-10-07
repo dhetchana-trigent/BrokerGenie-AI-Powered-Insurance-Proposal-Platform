@@ -1,0 +1,4 @@
+id,name,summary,businessClassRuleType,businessClassValues,includeBusinessClassValues,conditionalBusinessClassValues,excludeBusinessClassValues,statesRuleType,statesList,tivMin,tivMax,yearsMin,yearsMax,lossMaxClaims,lossMaxSeverity,employeeMin,employeeMax,hasSprinklersRequired,constructionTypes,strengths,concerns
+AI,AIG,Strong appetite for Finance class,,,Finance,,Manufacturing,include,Any,0,,3,,2,low,20,,No,Concrete|Steel Frame,Finance expertise|Global program capabilities|Complex risk structuring,Current underwriting restrictions|Geographic limitations
+
+

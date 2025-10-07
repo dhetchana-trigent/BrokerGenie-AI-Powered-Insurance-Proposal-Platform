@@ -16,9 +16,7 @@ const steps: Step[] = [
   { id: "risk-profile", title: "Risk Profile" },
   { id: "carrier-fit", title: "Carrier Fit & Compliance" },
   { id: "package-builder", title: "Package Builder & Pricing" },
-  { id: "coverage-comparison", title: "Coverage Comparison" },
   { id: "proposal-builder", title: "Proposal Builder" },
-  { id: "activity", title: "Activity" },
 ]
 
 interface StepperNavigationProps {

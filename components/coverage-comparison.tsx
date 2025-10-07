@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Download } from "lucide-react"
+import { Download, Building2, Shield, DollarSign, CheckCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useExtraction } from "@/lib/extraction-context"
 
 interface PackageData {
   name: string
@@ -33,74 +34,150 @@ interface PackageData {
 interface CoverageComparisonProps {
   onNext?: () => void
   onBack?: () => void
+  selectedPackageData?: any
 }
 
-export function CoverageComparison({ onNext, onBack }: CoverageComparisonProps) {
+export function CoverageComparison({ onNext, onBack, selectedPackageData }: CoverageComparisonProps) {
+  const { getBusinessType, getTotalInsuredValue, getStates, getLossHistory, getYearsInBusiness, getSafetyControls } = useExtraction()
   const [selectedPackage, setSelectedPackage] = useState<string>("balanced")
 
-  // Sample package data - in real app this would come from previous steps
-  const packages: Record<string, PackageData> = {
-    essential: {
-      name: "Essential",
-      badge: "Meets minimums",
-      glLimits: "$1M / $2M",
-      propertyTiv: 2500000,
-      propertyDeductible: 1000,
-      umbrella: 0,
-      endorsements: {
-        cyber: false,
-        epli: false,
-        ordLaw: false,
-        equipBreakdown: true,
-        flood: false,
+  // Set the selected package based on data from Package Builder
+  useEffect(() => {
+    if (selectedPackageData) {
+      setSelectedPackage(selectedPackageData.id)
+    }
+  }, [selectedPackageData])
+
+  // Generate dynamic package data based on business profile
+  const generateDynamicPackages = (): Record<string, PackageData> => {
+    const businessType = getBusinessType()
+    const tiv = getTotalInsuredValue()
+    const yearsInBusiness = parseInt(getYearsInBusiness()) || 15
+    const lossHistory = getLossHistory()
+    const safetyControls = getSafetyControls()
+    
+    // Parse TIV value (remove $ and commas)
+    const tivValue = parseInt(tiv.replace(/[$,]/g, '')) || 2500000
+    
+    // Determine risk factors
+    const isHighRisk = lossHistory.includes('claims') && parseInt(lossHistory) > 1
+    const isEstablished = yearsInBusiness > 10
+    const hasGoodSafety = safetyControls.includes('Sprinklers') || safetyControls.includes('Security')
+    
+    // Risk adjustments
+    const riskMultiplier = isHighRisk ? 1.3 : (isEstablished && hasGoodSafety ? 0.9 : 1.0)
+    
+    // Base premiums
+    const baseGL = 2500
+    const baseProperty = Math.max(2000, Math.min(8000, tivValue * 0.002))
+    const baseCyber = 1200
+    const baseEPLI = 800
+    const baseUmbrella = 1500
+
+    // If we have selected package data from Package Builder, use those values for consistency
+    const useSelectedData = selectedPackageData && selectedPackageData.coverageLines
+
+    return {
+      essential: {
+        name: "Essential",
+        badge: "Meets minimums",
+        glLimits: useSelectedData && selectedPackageData.id === "essential" 
+          ? selectedPackageData.coverageLines.find((line: any) => line.id === "gl")?.limit || "$1M / $2M"
+          : "$1M / $2M",
+        propertyTiv: tivValue,
+        propertyDeductible: 1000,
+        umbrella: 0,
+        endorsements: {
+          cyber: useSelectedData && selectedPackageData.id === "essential" 
+            ? selectedPackageData.coverageLines.find((line: any) => line.id === "cyber")?.included || false
+            : false,
+          epli: useSelectedData && selectedPackageData.id === "essential" 
+            ? selectedPackageData.coverageLines.find((line: any) => line.id === "epli")?.included || false
+            : false,
+          ordLaw: false,
+          equipBreakdown: true,
+          flood: false,
+        },
+        compliance: "eligible",
+        annualLow: useSelectedData && selectedPackageData.id === "essential"
+          ? Math.round(selectedPackageData.totalPremium * 0.9)
+          : Math.round((baseGL + baseProperty) * riskMultiplier * 0.9),
+        annualHigh: useSelectedData && selectedPackageData.id === "essential"
+          ? Math.round(selectedPackageData.totalPremium * 1.1)
+          : Math.round((baseGL + baseProperty) * riskMultiplier * 1.1),
+        monthly: useSelectedData && selectedPackageData.id === "essential"
+          ? selectedPackageData.monthlyPremium
+          : Math.round((baseGL + baseProperty) * riskMultiplier / 12),
+        notes: "Basic coverage meets state minimums",
       },
-      compliance: "eligible",
-      annualLow: 8400,
-      annualHigh: 9100,
-      monthly: 725,
-      notes: "Basic coverage meets state minimums",
-    },
-    balanced: {
-      name: "Balanced",
-      badge: "Recommended",
-      glLimits: "$1M / $2M",
-      propertyTiv: 2500000,
-      propertyDeductible: 1000,
-      umbrella: 5000000,
-      endorsements: {
-        cyber: true,
-        epli: true,
-        ordLaw: true,
-        equipBreakdown: true,
-        flood: false,
+      balanced: {
+        name: "Balanced",
+        badge: "Most Popular",
+        glLimits: useSelectedData && selectedPackageData.id === "balanced" 
+          ? selectedPackageData.coverageLines.find((line: any) => line.id === "gl")?.limit || "$2M / $4M"
+          : "$2M / $4M",
+        propertyTiv: tivValue,
+        propertyDeductible: 1000,
+        umbrella: 1000000,
+        endorsements: {
+          cyber: useSelectedData && selectedPackageData.id === "balanced" 
+            ? selectedPackageData.coverageLines.find((line: any) => line.id === "cyber")?.included || true
+            : true,
+          epli: useSelectedData && selectedPackageData.id === "balanced" 
+            ? selectedPackageData.coverageLines.find((line: any) => line.id === "epli")?.included || true
+            : true,
+          ordLaw: true,
+          equipBreakdown: true,
+          flood: false,
+        },
+        compliance: "eligible",
+        annualLow: useSelectedData && selectedPackageData.id === "balanced"
+          ? Math.round(selectedPackageData.totalPremium * 0.9)
+          : Math.round((baseGL * 1.2 + baseProperty + baseCyber + baseEPLI + baseUmbrella) * riskMultiplier * 0.9),
+        annualHigh: useSelectedData && selectedPackageData.id === "balanced"
+          ? Math.round(selectedPackageData.totalPremium * 1.1)
+          : Math.round((baseGL * 1.2 + baseProperty + baseCyber + baseEPLI + baseUmbrella) * riskMultiplier * 1.1),
+        monthly: useSelectedData && selectedPackageData.id === "balanced"
+          ? selectedPackageData.monthlyPremium
+          : Math.round((baseGL * 1.2 + baseProperty + baseCyber + baseEPLI + baseUmbrella) * riskMultiplier / 12),
+        notes: "Comprehensive coverage with essential endorsements",
       },
-      compliance: "eligible",
-      annualLow: 12400,
-      annualHigh: 13400,
-      monthly: 1075,
-      notes: "Best value for multi-state retail with POS exposure",
-    },
-    comprehensive: {
-      name: "Comprehensive",
-      badge: "Enhanced protection",
-      glLimits: "$2M / $4M",
-      propertyTiv: 2500000,
-      propertyDeductible: 500,
-      umbrella: 5000000,
-      endorsements: {
-        cyber: true,
-        epli: true,
-        ordLaw: true,
-        equipBreakdown: true,
-        flood: true,
+      comprehensive: {
+        name: "Comprehensive",
+        badge: "Premium",
+        glLimits: useSelectedData && selectedPackageData.id === "comprehensive" 
+          ? selectedPackageData.coverageLines.find((line: any) => line.id === "gl")?.limit || "$5M / $10M"
+          : "$5M / $10M",
+        propertyTiv: tivValue,
+        propertyDeductible: 500,
+        umbrella: 5000000,
+        endorsements: {
+          cyber: useSelectedData && selectedPackageData.id === "comprehensive" 
+            ? selectedPackageData.coverageLines.find((line: any) => line.id === "cyber")?.included || true
+            : true,
+          epli: useSelectedData && selectedPackageData.id === "comprehensive" 
+            ? selectedPackageData.coverageLines.find((line: any) => line.id === "epli")?.included || true
+            : true,
+          ordLaw: true,
+          equipBreakdown: true,
+          flood: true,
+        },
+        compliance: isHighRisk ? "conditional" : "eligible",
+        annualLow: useSelectedData && selectedPackageData.id === "comprehensive"
+          ? Math.round(selectedPackageData.totalPremium * 0.9)
+          : Math.round((baseGL * 1.5 + baseProperty * 1.1 + baseCyber * 1.5 + baseEPLI * 1.3 + baseUmbrella * 2) * riskMultiplier * 0.9),
+        annualHigh: useSelectedData && selectedPackageData.id === "comprehensive"
+          ? Math.round(selectedPackageData.totalPremium * 1.1)
+          : Math.round((baseGL * 1.5 + baseProperty * 1.1 + baseCyber * 1.5 + baseEPLI * 1.3 + baseUmbrella * 2) * riskMultiplier * 1.1),
+        monthly: useSelectedData && selectedPackageData.id === "comprehensive"
+          ? selectedPackageData.monthlyPremium
+          : Math.round((baseGL * 1.5 + baseProperty * 1.1 + baseCyber * 1.5 + baseEPLI * 1.3 + baseUmbrella * 2) * riskMultiplier / 12),
+        notes: "Maximum protection with premium endorsements",
       },
-      compliance: "conditional",
-      annualLow: 16800,
-      annualHigh: 18200,
-      monthly: 1475,
-      notes: "Higher umbrella and lower deductible for better protection",
-    },
+    }
   }
+
+  const packages = generateDynamicPackages()
 
   const getComplianceColor = (compliance: string) => {
     switch (compliance) {
@@ -142,6 +219,19 @@ export function CoverageComparison({ onNext, onBack }: CoverageComparisonProps) 
     return `$${amount / 1000000}M`
   }
 
+  const generateClientSummaryBullets = () => {
+    const bullets = [
+      `Business: ${getBusinessType()}`,
+      `Location: ${getStates()}`,
+      `Years in Business: ${getYearsInBusiness()}`,
+      `Total Insured Value: ${getTotalInsuredValue()}`,
+      `Loss History: ${getLossHistory()}`,
+      `Safety Controls: ${getSafetyControls()}`,
+    ]
+
+    return bullets
+  }
+
   const generateSummaryBullets = () => {
     const selected = packages[selectedPackage]
     const bullets = []
@@ -149,11 +239,11 @@ export function CoverageComparison({ onNext, onBack }: CoverageComparisonProps) 
     // Compare with Essential to highlight differences
     if (selectedPackage === "balanced") {
       bullets.push("Adds Cyber and EPLI for data/privacy and HR claims.")
-      bullets.push("Includes $5M Umbrella for additional liability protection.")
+      bullets.push("Includes $1M Umbrella for additional liability protection.")
       bullets.push("Ordinance & Law coverage for building code upgrades.")
     } else if (selectedPackage === "comprehensive") {
       bullets.push("Higher umbrella and lower deductible for better protection.")
-      bullets.push("Enhanced GL limits ($2M/$4M) for manufacturing operations.")
+      bullets.push("Enhanced GL limits ($5M/$10M) for manufacturing operations.")
       bullets.push("Flood sub-limit included for weather-related exposures.")
     } else {
       bullets.push("Basic coverage package meeting minimum requirements.")
@@ -249,10 +339,13 @@ export function CoverageComparison({ onNext, onBack }: CoverageComparisonProps) 
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">BrokerGenie | Coverage Comparison</h1>
-        <p className="text-muted-foreground mt-2">Compare options and send a client-ready proposal in minutes.</p>
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">BrokerGenie | Coverage Comparison</h1>
+        <p className="text-muted-foreground">
+          Compare options and send a client-ready proposal in minutes
+        </p>
       </div>
 
       <div className="flex gap-6">
@@ -338,58 +431,6 @@ export function CoverageComparison({ onNext, onBack }: CoverageComparisonProps) 
                       ))}
                     </tr>
                     <tr className="border-b">
-                      <td className="p-4 font-medium">Endorsements (Yes/No)</td>
-                      {Object.values(packages).map((pkg, index) => (
-                        <td key={index} className="p-4">
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span>Cyber:</span>
-                              <Badge variant={pkg.endorsements.cyber ? "default" : "outline"} className="text-xs">
-                                {pkg.endorsements.cyber ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>EPLI:</span>
-                              <Badge variant={pkg.endorsements.epli ? "default" : "outline"} className="text-xs">
-                                {pkg.endorsements.epli ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Ord & Law:</span>
-                              <Badge variant={pkg.endorsements.ordLaw ? "default" : "outline"} className="text-xs">
-                                {pkg.endorsements.ordLaw ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Equip Break:</span>
-                              <Badge
-                                variant={pkg.endorsements.equipBreakdown ? "default" : "outline"}
-                                className="text-xs"
-                              >
-                                {pkg.endorsements.equipBreakdown ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Flood:</span>
-                              <Badge variant={pkg.endorsements.flood ? "default" : "outline"} className="text-xs">
-                                {pkg.endorsements.flood ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-b">
-                      <td className="p-4 font-medium">Compliance</td>
-                      {Object.values(packages).map((pkg, index) => (
-                        <td key={index} className="p-4 text-center">
-                          <Badge variant="outline" className={cn("text-xs", getComplianceColor(pkg.compliance))}>
-                            {getComplianceLabel(pkg.compliance)}
-                          </Badge>
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-b">
                       <td className="p-4 font-medium">Annual premium (range)</td>
                       {Object.values(packages).map((pkg, index) => (
                         <td key={index} className="p-4 text-center font-semibold">
@@ -425,13 +466,16 @@ export function CoverageComparison({ onNext, onBack }: CoverageComparisonProps) 
           {/* Client Summary */}
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Client Summary</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Client Summary
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <ul className="space-y-2">
-                {generateSummaryBullets().map((bullet, index) => (
+                {generateClientSummaryBullets().map((bullet, index) => (
                   <li key={index} className="text-sm flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                     {bullet}
                   </li>
                 ))}
