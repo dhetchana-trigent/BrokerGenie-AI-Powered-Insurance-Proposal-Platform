@@ -89,13 +89,3 @@ Use these included files (folder: `Acme Manufacturing Inc docs/`) to test upload
 3. Click Choose Files (or drag-and-drop).
 4. Select one or more files from `Acme Manufacturing Inc docs/`.
 5. Click Extract with AI and review parsed fields (e.g., business info, safety controls such as "Sprinkler System").
-
-Windows paths example:
-```
-D:\College\Internship\Trigent\brokergenie\Acme Manufacturing Inc docs\
-```
-
-macOS/Linux example:
-```
-~/path/to/brokergenie/Acme Manufacturing Inc docs/
-```
