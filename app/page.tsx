@@ -390,7 +390,7 @@ export default function BrokerGeniePage() {
             onClick={handleViewSampleProposal}
             variant="outline"
             size="lg"
-            className="px-8 py-4 text-lg font-semibold border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 bg-transparent"
+            className="px-8 py-4 text-lg font-semibold border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-black rounded-xl shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 bg-transparent"
           >
             View Sample Proposal
           </Button>
