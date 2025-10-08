@@ -72,3 +72,30 @@ PORT=3001 pnpm dev          # macOS/Linux
 ```
 - If `corepack` is missing, reinstall Node 20 LTS and reopen your terminal.
 - If installation fails on Windows, run your terminal as Administrator, then retry `pnpm i`.
+
+---
+
+## Sample Documents for Testing (Acme Manufacturing Inc)
+
+Use these included files (folder: `Acme Manufacturing Inc docs/`) to test upload and AI extraction:
+- `ACORD_125_Application.pdf` — application form
+- `Loss_Runs_2023.pdf` — loss history
+- `Prior_Policy_Declarations.pdf` — prior policy dec page
+- `property_SOV.xlsx` — statement of values (property)
+
+### Upload Instructions
+1. Start the dev server (`pnpm dev`) and open `http://localhost:3000`.
+2. Go to Client Intake (Upload).
+3. Click Choose Files (or drag-and-drop).
+4. Select one or more files from `Acme Manufacturing Inc docs/`.
+5. Click Extract with AI and review parsed fields (e.g., business info, safety controls such as "Sprinkler System").
+
+Windows paths example:
+```
+D:\College\Internship\Trigent\brokergenie\Acme Manufacturing Inc docs\
+```
+
+macOS/Linux example:
+```
+~/path/to/brokergenie/Acme Manufacturing Inc docs/
+```

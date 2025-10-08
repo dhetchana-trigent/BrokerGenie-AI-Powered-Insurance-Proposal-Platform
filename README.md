@@ -70,3 +70,56 @@ Business Type is matched against include/conditional/exclude lists. Other factor
 License
 Proprietary — for demonstration and internal use.
 
+
+## Local Setup (Step-by-step)
+
+1) Install prerequisites
+- Node.js 20.x LTS from `https://nodejs.org/en`
+- Git, and optionally pnpm via Corepack
+
+2) Enable pnpm (recommended)
+```
+corepack enable
+corepack prepare pnpm@9 --activate
+```
+
+3) Install dependencies (from project root)
+```
+pnpm i
+# or: npm i
+```
+
+4) Run locally
+```
+pnpm dev
+# or: npm run dev
+# App: http://localhost:3000
+```
+
+5) Production build (optional)
+```
+pnpm build && pnpm start
+# or: npm run build && npm run start
+```
+
+## Sample Documents & Upload (Acme Manufacturing Inc)
+
+Use the bundled sample files in `Acme Manufacturing Inc docs/` to test Client Intake upload and AI extraction:
+- `ACORD_125_Application.pdf` (application form)
+- `Loss_Runs_2023.pdf` (claims history)
+- `Prior_Policy_Declarations.pdf` (prior coverage)
+- `property_SOV.xlsx` (statement of values)
+
+Instructions:
+1. Start the app and open `http://localhost:3000`
+2. Go to Client Intake (Upload)
+3. Click Choose Files (or drag-and-drop)
+4. Select files from `Acme Manufacturing Inc docs/`
+5. After upload, click Extract with AI and review the parsed fields (e.g., business info, operations, safety controls like "Sprinkler System")
+
+If port 3000 is busy:
+```
+$env:PORT=3001; pnpm dev    # Windows PowerShell
+set PORT=3001 && pnpm dev   # Windows CMD
+PORT=3001 pnpm dev          # macOS/Linux
+```
