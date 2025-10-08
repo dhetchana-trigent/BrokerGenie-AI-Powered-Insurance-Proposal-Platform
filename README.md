@@ -25,7 +25,7 @@ Requirements
 Quick Start (Clone and Run)
 ```
 # Clone
-git clone https://github.com/dhetchana-trigent/BrokerGenie-AI-Powered-Insurance-Proposal-Platform.git
+git clone https://github.com/Roshan1917/BrokerGenie-AI-Powered-Insurance-Proposal-Platform.git
 cd BrokerGenie-AI-Powered-Insurance-Proposal-Platform
 
 # Enable pnpm (recommended)
